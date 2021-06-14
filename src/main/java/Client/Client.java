@@ -16,6 +16,7 @@ import Requests.SaveChatRequest;
 import Requests.ValidateRequest;
 import Server.ClientHandler;
 import Server.Server;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -213,5 +214,9 @@ public class Client implements Serializable{
         } catch (BadLocationException | IOException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public void uploadFile(File selectedFile) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

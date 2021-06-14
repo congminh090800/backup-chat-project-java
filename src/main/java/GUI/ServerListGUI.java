@@ -7,6 +7,7 @@ package GUI;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -96,22 +97,31 @@ public class ServerListGUI extends javax.swing.JFrame {
     }
     
     private void readConfig(){
-        FileReader fr = null;
-        try {
-            fr = new FileReader("address_list.txt");
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(ServerListGUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        BufferedReader br = new BufferedReader(fr); 
-        try {
-            String line;
-            while ((line = br.readLine()) != null) {
-                addServer(line);
-            } 
-            br.close();
-            fr.close();  
-        } catch (IOException ex) {
-            JOptionPane.showConfirmDialog(null, "Failed to load config", "Failure", JOptionPane.DEFAULT_OPTION);            
+        File f = new File("address_list.txt");
+        if (f.exists()){
+            FileReader fr = null; 
+            try {
+                fr = new FileReader(f);
+                BufferedReader br = new BufferedReader(fr);
+                try {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        addServer(line);
+                    }
+                    br.close();            
+                    fr.close();
+                } catch (IOException ex) {
+                    JOptionPane.showConfirmDialog(null, "Failed to load config", "Failure", JOptionPane.DEFAULT_OPTION);
+                }
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(ServerListGUI.class.getName()).log(Level.SEVERE, null, ex);            
+            } finally {
+                try {
+                    fr.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(ServerListGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }            
         }
     }
     /**
