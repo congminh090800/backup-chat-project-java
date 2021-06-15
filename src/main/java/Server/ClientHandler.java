@@ -40,7 +40,16 @@ public class ClientHandler extends Thread implements Serializable{
     private transient Server server;
     private String username;
     private Map<String,String> chatHistory = new HashMap<>();
+    private int byteOrder = 0;
 
+    public int getByteOrder() {
+        return byteOrder;
+    }
+
+    public void setByteOrder(int byteOrder) {
+        this.byteOrder = byteOrder;
+    }
+    
     public Map<String, String> getChatHistory() {
         return chatHistory;
     }

@@ -6,6 +6,7 @@
 package Client;
 
 import Constants.Command;
+import Constants.env;
 import GUI.ChatApplication;
 import Requests.BaseRequest;
 import Requests.LoadChatRequest;
@@ -13,10 +14,13 @@ import Requests.NoParamRequest;
 import Requests.PrivateChatRequest;
 import Requests.RegisterRequest;
 import Requests.SaveChatRequest;
+import Requests.UploadRequest;
 import Requests.ValidateRequest;
 import Server.ClientHandler;
 import Server.Server;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -47,6 +51,15 @@ public class Client implements Serializable{
     private String uid;
     private String username;
     private ChatApplication chatApp;
+    private UploadHandler uploadHandler;
+
+    public UploadHandler getUploadHandler() {
+        return uploadHandler;
+    }
+
+    public void setUploadHandler(UploadHandler uploadHandler) {
+        this.uploadHandler = uploadHandler;
+    }
 
     public ChatApplication getChatApp() {
         return chatApp;
@@ -114,57 +127,53 @@ public class Client implements Serializable{
     public void setClientSocket(Socket clientSocket) {
         this.clientSocket = clientSocket;
     }
-    
-    public void fetchOnlineUsers()throws IOException{
+    public void sendRequest(BaseRequest req){
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+            out.writeObject(req);        
+            out.flush();
+        } catch (IOException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    public void fetchOnlineUsers(){
         BaseRequest req = new NoParamRequest(Command.GET_ONLINE_USERS);
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.writeObject(req);
-        out.flush();
+        sendRequest(req);
     }
     
-    public void disconnect() throws IOException{
+    public void disconnect(){
         BaseRequest req = new NoParamRequest(Command.DISCONNECT);
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.writeObject(req);
-        out.flush();
+        sendRequest(req);
     }
     
-    public void sendPrivateMessage(String message, String receiver) throws IOException{
+    public void sendPrivateMessage(String message, String receiver){
         BaseRequest req = new PrivateChatRequest(message, receiver, Command.PRIVATE_CHAT);    
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.writeObject(req);
-        out.flush();
+        sendRequest(req);
     }
     
-    public void getOwnUid() throws IOException{
+    public void getOwnUid(){
         BaseRequest req = new NoParamRequest(Command.GET_UID);      
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.writeObject(req);
-        out.flush();
+        sendRequest(req);
     }
-    public void validateUsername(String username) throws IOException{
+    public void validateUsername(String username){
         BaseRequest req = new ValidateRequest(username, Command.VALIDATE_USERNAME);      
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.writeObject(req);
-        out.flush();
+        sendRequest(req);
     }
-    public void register(String username) throws IOException{
+    public void register(String username){
         BaseRequest req = new RegisterRequest(username, Command.REGISTER);      
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.writeObject(req);
-        out.flush();
+        sendRequest(req);
     }
-    public void saveChat(String sender, String message) throws IOException{
+    public void saveChat(String sender, String message){
         BaseRequest req = new SaveChatRequest(sender, message, Command.SAVE_CHAT);      
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.writeObject(req);
-        out.flush();        
+        sendRequest(req);       
     }
-    public void loadChat(String target) throws IOException{
+    public void loadChat(String target){
         BaseRequest req = new LoadChatRequest(target, Command.LOAD_CHAT);      
-        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-        out.writeObject(req);
-        out.flush();       
+        sendRequest(req);       
+    }
+    public void uploadFile(File selectedFile){
+        uploadHandler = new UploadHandler(selectedFile);
+        uploadHandler.start();
     }
     public void connect(String ip, int port, String username) throws IOException{
         this.clientSocket = new Socket(ip, port);
@@ -215,8 +224,90 @@ public class Client implements Serializable{
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    public class UploadHandler extends Thread implements Serializable{
+        private boolean running;
+        private final File selectedFile;
+        private int order;
+        private Socket uploadSocket;
+        
+        public UploadHandler(File selectedFile) {
+            this.selectedFile = selectedFile;
+            try {
+                uploadSocket = new Socket(clientSocket.getInetAddress().getHostAddress(),clientSocket.getPort());
+            } catch (IOException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
 
-    public void uploadFile(File selectedFile) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        public boolean isRunning() {
+            return running;
+        }
+
+        public void setRunning(boolean running) {
+            this.running = running;
+        }
+        
+        public void uploadSnippet(int order, byte[] data, String fileName, boolean isLast){
+            BaseRequest req = new UploadRequest(order, data, fileName, isLast, username, Command.UPLOAD_FILE);
+            try {
+                ObjectOutputStream out = new ObjectOutputStream(uploadSocket.getOutputStream());
+                out.writeObject(req);        
+                out.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        @Override
+        public void run(){ 
+            FileInputStream in = null;
+            try {
+                running = true;
+                order = 1;
+                String path = selectedFile.getAbsolutePath();
+                String fileName = selectedFile.getName();
+                final long fileSize = selectedFile.length();
+                byte data[] = new byte[env.SNIPPET_SIZE];
+                int snippetSize;
+                in = new FileInputStream(path);
+                while (running && (snippetSize = in.read(data))>0){
+                    uploadSnippet(order, data, fileName, (snippetSize==-1));
+                    if (snippetSize!=-1){
+                        int percent = (int)(((long)(order*env.SNIPPET_SIZE))*100.0/fileSize +0.5);
+                        System.out.println("Upload:"+percent+"%");
+                        System.out.println("Upload:"+snippetSize);
+                        System.out.println("Upload:"+order*env.SNIPPET_SIZE+"/"+fileSize);
+                        try {
+                            SwingUtilities.invokeAndWait(() -> {
+                                chatApp.getUploadProgress().setValue((int) percent);
+                            });
+                        } catch (InterruptedException | InvocationTargetException ex) {
+                            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                    order++;
+                }
+                uploadSocket.close();
+                try {
+                    SwingUtilities.invokeAndWait(() -> {
+                        chatApp.getUploadProgress().setValue(0);
+                    });
+                } catch (InterruptedException | InvocationTargetException ex) {
+                    Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                try {
+                    in.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        
     }
 }

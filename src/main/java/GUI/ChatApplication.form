@@ -48,8 +48,7 @@
                   </Group>
               </Group>
               <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="chatHistoryScroll" min="-2" pref="416" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" max="-2" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
                       <Component id="messageScroll" min="-2" pref="332" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
@@ -59,6 +58,12 @@
                       </Group>
                   </Group>
                   <Component id="userInfoLabel" alignment="0" min="-2" pref="351" max="-2" attributes="0"/>
+                  <Component id="chatHistoryScroll" alignment="0" min="-2" pref="416" max="-2" attributes="0"/>
+                  <Group type="102" alignment="1" attributes="0">
+                      <Component id="jLabel2" max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="uploadProgress" min="-2" pref="309" max="-2" attributes="0"/>
+                  </Group>
               </Group>
               <EmptySpace pref="36" max="32767" attributes="0"/>
           </Group>
@@ -92,8 +97,13 @@
                       <Component id="fileScroll" min="-2" pref="150" max="-2" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="1" attributes="0">
-                      <Component id="chatHistoryScroll" max="32767" attributes="0"/>
-                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="chatHistoryScroll" min="-2" pref="312" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
+                      <Group type="103" groupAlignment="1" attributes="0">
+                          <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
+                          <Component id="uploadProgress" alignment="1" min="-2" pref="19" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" max="-2" attributes="0">
                           <Group type="102" attributes="0">
                               <Component id="sendBtn" min="-2" max="-2" attributes="0"/>
@@ -220,6 +230,13 @@
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
         <Property name="text" type="java.lang.String" value="Online users:"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JProgressBar" name="uploadProgress">
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel2">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Upload/Download:"/>
       </Properties>
     </Component>
   </SubComponents>

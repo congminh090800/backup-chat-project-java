@@ -19,6 +19,7 @@ import javax.swing.InputMap;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
@@ -49,14 +50,18 @@ public class ChatApplication extends javax.swing.JFrame {
     private void submitText() {
         String receiver = onlineList.getSelectedValue();
         String message = messageArea.getText();
-        try {
-            if (!message.equals("") && message!=null){
-                client.sendPrivateMessage(message, receiver);
-                messageArea.setText("");
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(ChatApplication.class.getName()).log(Level.SEVERE, null, ex);
+        if (!message.equals("") && message!=null){
+            client.sendPrivateMessage(message, receiver);
+            messageArea.setText("");
         }
+    }
+
+    public JProgressBar getUploadProgress() {
+        return uploadProgress;
+    }
+
+    public void setUploadProgress(JProgressBar uploadProgress) {
+        this.uploadProgress = uploadProgress;
     }
     
     public JTextPane getChatHistoryArea() {
@@ -132,6 +137,8 @@ public class ChatApplication extends javax.swing.JFrame {
         sendBtn = new javax.swing.JButton();
         uploadBtn = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
+        uploadProgress = new javax.swing.JProgressBar();
+        jLabel2 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Chat Application");
@@ -181,6 +188,8 @@ public class ChatApplication extends javax.swing.JFrame {
 
         jLabel1.setText("Online users:");
 
+        jLabel2.setText("Upload/Download:");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -203,15 +212,19 @@ public class ChatApplication extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(disconnectBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(26, 26, 26)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(chatHistoryScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 416, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(messageScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 332, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(sendBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(uploadBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(userInfoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 351, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(userInfoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 351, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(chatHistoryScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 416, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(uploadProgress, javax.swing.GroupLayout.PREFERRED_SIZE, 309, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(36, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -237,8 +250,12 @@ public class ChatApplication extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(fileScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(chatHistoryScroll)
-                        .addGap(18, 18, 18)
+                        .addComponent(chatHistoryScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 312, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel2)
+                            .addComponent(uploadProgress, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(sendBtn)
@@ -253,13 +270,8 @@ public class ChatApplication extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void disconnectBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_disconnectBtnActionPerformed
-        try {
-            // TODO add your handling code here:
-            client.disconnect();
-            this.dispose();
-        } catch (IOException ex) {
-            Logger.getLogger(ChatApplication.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        client.disconnect();
+        this.dispose();
     }//GEN-LAST:event_disconnectBtnActionPerformed
 
     private void sendBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendBtnActionPerformed
@@ -272,7 +284,7 @@ public class ChatApplication extends javax.swing.JFrame {
         JFileChooser fc = new JFileChooser();
         int option = fc.showOpenDialog(this);
         if (option == JFileChooser.APPROVE_OPTION){
-            System.out.println(fc.getSelectedFile().getAbsolutePath());
+            client.uploadFile(fc.getSelectedFile());
         }
     }//GEN-LAST:event_uploadBtnActionPerformed
 
@@ -316,6 +328,7 @@ public class ChatApplication extends javax.swing.JFrame {
     private javax.swing.JLabel fileListLabel;
     private javax.swing.JScrollPane fileScroll;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JTextArea messageArea;
     private javax.swing.JScrollPane messageScroll;
     private javax.swing.JList<String> onlineList;
@@ -323,6 +336,7 @@ public class ChatApplication extends javax.swing.JFrame {
     private javax.swing.JButton sendBtn;
     private javax.swing.JLabel serverInfoLabel;
     private javax.swing.JButton uploadBtn;
+    private javax.swing.JProgressBar uploadProgress;
     private javax.swing.JLabel userInfoLabel;
     // End of variables declaration//GEN-END:variables
 
@@ -344,12 +358,8 @@ public class ChatApplication extends javax.swing.JFrame {
 
     private void bindClickForOnline() {
         onlineList.addListSelectionListener((e) -> {
-            try {
-                String target = onlineList.getSelectedValue();
-                client.loadChat(target);
-            } catch (IOException ex) {
-                Logger.getLogger(ChatApplication.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            String target = onlineList.getSelectedValue();
+            client.loadChat(target);
         });
     }
 }

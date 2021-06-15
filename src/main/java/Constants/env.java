@@ -14,4 +14,5 @@ public class env {
     public static String HOST = "localhost";
     public static final String TEXT_SUBMIT = "text-submit";
     public static final String INSERT_BREAK = "insert-break";
+    public static final int SNIPPET_SIZE = 4096;
 }

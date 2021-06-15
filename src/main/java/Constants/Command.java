@@ -17,5 +17,6 @@ public enum Command {
     REGISTER,
     VALIDATE_USERNAME, 
     SAVE_CHAT,
-    LOAD_CHAT
+    LOAD_CHAT,
+    UPLOAD_FILE,
 }
