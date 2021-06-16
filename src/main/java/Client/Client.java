@@ -26,7 +26,9 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.security.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -227,9 +229,26 @@ public class Client implements Serializable{
     
     public class UploadHandler extends Thread implements Serializable{
         private boolean running;
-        private final File selectedFile;
+        private File selectedFile;
         private int order;
         private Socket uploadSocket;
+        private Date timestamp;
+
+        public File getSelectedFile() {
+            return selectedFile;
+        }
+
+        public void setSelectedFile(File selectedFile) {
+            this.selectedFile = selectedFile;
+        }
+
+        public Date getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(Date timestamp) {
+            this.timestamp = timestamp;
+        }
         
         public UploadHandler(File selectedFile) {
             this.selectedFile = selectedFile;
@@ -238,6 +257,7 @@ public class Client implements Serializable{
             } catch (IOException ex) {
                 Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
             }
+            this.timestamp = new Date();
         }
 
         public boolean isRunning() {
@@ -247,9 +267,17 @@ public class Client implements Serializable{
         public void setRunning(boolean running) {
             this.running = running;
         }
+
+        public Socket getUploadSocket() {
+            return uploadSocket;
+        }
+
+        public void setUploadSocket(Socket uploadSocket) {
+            this.uploadSocket = uploadSocket;
+        }
         
         public void uploadSnippet(int order, byte[] data, String fileName, boolean isLast){
-            BaseRequest req = new UploadRequest(order, data, fileName, isLast, username, Command.UPLOAD_FILE);
+            BaseRequest req = new UploadRequest(order, data, fileName, isLast, username, timestamp, Command.UPLOAD_FILE);
             try {
                 ObjectOutputStream out = new ObjectOutputStream(uploadSocket.getOutputStream());
                 out.writeObject(req);        
@@ -263,6 +291,13 @@ public class Client implements Serializable{
         public void run(){ 
             FileInputStream in = null;
             try {
+                try {
+                    SwingUtilities.invokeAndWait(() -> {
+                        chatApp.getUploadBtn().setEnabled(false);
+                    });
+                } catch (InterruptedException | InvocationTargetException ex) {
+                    Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 running = true;
                 order = 1;
                 String path = selectedFile.getAbsolutePath();
@@ -272,12 +307,9 @@ public class Client implements Serializable{
                 int snippetSize;
                 in = new FileInputStream(path);
                 while (running && (snippetSize = in.read(data))>0){
-                    uploadSnippet(order, data, fileName, (snippetSize==-1));
+                    uploadSnippet(order, data, fileName, false);
                     if (snippetSize!=-1){
                         int percent = (int)(((long)(order*env.SNIPPET_SIZE))*100.0/fileSize +0.5);
-                        System.out.println("Upload:"+percent+"%");
-                        System.out.println("Upload:"+snippetSize);
-                        System.out.println("Upload:"+order*env.SNIPPET_SIZE+"/"+fileSize);
                         try {
                             SwingUtilities.invokeAndWait(() -> {
                                 chatApp.getUploadProgress().setValue((int) percent);
@@ -288,10 +320,10 @@ public class Client implements Serializable{
                     }
                     order++;
                 }
-                uploadSocket.close();
+                uploadSnippet(order, null, fileName, true);
                 try {
                     SwingUtilities.invokeAndWait(() -> {
-                        chatApp.getUploadProgress().setValue(0);
+                        chatApp.getUploadProgress().setValue(100);
                     });
                 } catch (InterruptedException | InvocationTargetException ex) {
                     Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);

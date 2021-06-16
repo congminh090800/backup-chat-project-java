@@ -16,6 +16,7 @@ import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.DefaultListModel;
 import javax.swing.InputMap;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -110,6 +111,14 @@ public class ChatApplication extends javax.swing.JFrame {
 
     public void setOnlineList(JList<String> onlineList) {
         this.onlineList = onlineList;
+    }
+
+    public JButton getUploadBtn() {
+        return uploadBtn;
+    }
+
+    public void setUploadBtn(JButton uploadBtn) {
+        this.uploadBtn = uploadBtn;
     }
 
     /**

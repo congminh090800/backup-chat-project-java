@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollBar;
 import javax.swing.SwingUtilities;
+import static javax.swing.SwingUtilities.invokeAndWait;
 import javax.swing.text.DefaultCaret;
 import org.w3c.dom.css.Rect;
 
@@ -131,6 +133,35 @@ public class ResponseHandler extends Thread implements Serializable{
                             }
                             case SERVER_DISCONNNECT -> {
                                 client.showOptionPane("Server will not response until on", "Server is closed!!", JOptionPane.DEFAULT_OPTION);
+                                break;
+                            }
+                            case UPLOAD_SUCCESSFUL -> {
+                                DefaultListModel listModel = (DefaultListModel) client.getChatApp().getFileList().getModel();
+                                String filename = client.getUploadHandler().getTimestamp()+"_"+ client.getUploadHandler().getSelectedFile().getName();
+                                try {
+                                    invokeAndWait(() -> {
+                                        client.getChatApp().getUploadProgress().setValue(0);
+                                        client.getChatApp().getUploadBtn().setEnabled(true);
+                                        listModel.addElement(filename);
+                                    });
+                                } catch (InterruptedException | InvocationTargetException ex) {
+                                    Logger.getLogger(ResponseHandler.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                                client.getUploadHandler().getUploadSocket().close();
+                                break;
+                            }
+                            case UPLOAD_FAILED -> {
+                                try {
+                                    invokeAndWait(() -> {
+                                        client.getChatApp().getUploadProgress().setValue(0);
+                                        client.getChatApp().getUploadBtn().setEnabled(true);
+                                        client.showOptionPane(res.getStatus()+":"+res.getMessage(), "Upload file", JOptionPane.DEFAULT_OPTION);
+                                        client.getUploadHandler().setRunning(false);
+                                    });
+                                } catch (InterruptedException | InvocationTargetException ex) {
+                                    Logger.getLogger(ResponseHandler.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                                client.getUploadHandler().getUploadSocket().close();
                                 break;
                             }
                             default -> {

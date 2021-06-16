@@ -6,6 +6,7 @@
 package Requests;
 
 import Constants.Command;
+import java.util.Date;
 
 /**
  *
@@ -17,7 +18,17 @@ public class UploadRequest extends BaseRequest{
     private String fileName;
     private boolean isLast;
     private String sender;
+    private Date timestamp;
 
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    
     public String getSender() {
         return sender;
     }
@@ -26,15 +37,15 @@ public class UploadRequest extends BaseRequest{
         this.sender = sender;
     }
 
-    public UploadRequest(int order, byte[] data, String fileName, boolean isLast, String sender, Command command) {
+    public UploadRequest(int order, byte[] data, String fileName, boolean isLast, String sender, Date timestamp, Command command) {
         super(command);
         this.order = order;
         this.data = data;
         this.fileName = fileName;
         this.isLast = isLast;
         this.sender = sender;
+        this.timestamp = timestamp;
     }
-
 
     public boolean isIsLast() {
         return isLast;

@@ -13,12 +13,15 @@ import Requests.LoadChatRequest;
 import Requests.PrivateChatRequest;
 import Requests.RegisterRequest;
 import Requests.SaveChatRequest;
+import Requests.UploadRequest;
 import Requests.ValidateRequest;
 import Responses.AckResponse;
 import Responses.BaseResponse;
 import Responses.LoadChatResponse;
 import Responses.OnlineUsersResponse;
 import Responses.PrivateChatResponse;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -154,7 +157,6 @@ public class ClientHandler extends Thread implements Serializable{
                     server.setClients(users);
                     server.removeUsers(this.getUsername());
                     server.logger("User " + this.getUsername() + " disconnected\n");
-                    this.stop();
                     //send broadcast
                     BaseResponse ackRes = new AckResponse(uid, this.username, SystemCode.USER_DISCONNNECT, StatusCode.OK);
                     for (ClientHandler client : server.getClients().values()){
@@ -273,6 +275,45 @@ public class ClientHandler extends Thread implements Serializable{
                         ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
                         out.writeObject(loadRes);
                         out.flush();                        
+                    }
+                    break;
+                }
+                case UPLOAD_FILE -> {
+                    UploadRequest upReq = ((UploadRequest) req);
+                    ClientHandler sender = server.getClients().get(upReq.getSender());
+                    if (sender != null){
+                        String fileName = upReq.getTimestamp().getTime()+"_"+upReq.getFileName();
+                        File file = new File(fileName);
+                        file.createNewFile();
+                        if (upReq.getOrder()==byteOrder+1){
+                            if (!file.exists()) break;
+                            if (upReq.getData()!=null){
+                                try (FileOutputStream output = new FileOutputStream(file, true)) {
+                                    output.write(upReq.getData());
+                                }                                
+                            }
+                            byteOrder++;
+                        }else{
+                            BaseResponse ackRes = new AckResponse(sender.getUid(), "Checksum failed", SystemCode.UPLOAD_FAILED, StatusCode.INTERNAL_ERROR);
+                            ObjectOutputStream out = new ObjectOutputStream(sender.getClientSocket().getOutputStream());
+                            out.writeObject(ackRes);
+                            out.flush();     
+                            byteOrder = 0;
+                            break;
+                        }
+                        if (upReq.isIsLast()){
+                            BaseResponse ackRes = new AckResponse(sender.getUid(), "Upload successfully", SystemCode.UPLOAD_SUCCESSFUL, StatusCode.OK);
+                            ObjectOutputStream out = new ObjectOutputStream(sender.getClientSocket().getOutputStream());
+                            out.writeObject(ackRes);
+                            out.flush();     
+                            byteOrder = 0;                         
+                        }
+                    }else{
+                        BaseResponse ackRes = new AckResponse(sender.getUid(), "User lost connection to server", SystemCode.UPLOAD_FAILED, StatusCode.NOT_FOUND);
+                        ObjectOutputStream out = new ObjectOutputStream(sender.getClientSocket().getOutputStream());
+                        out.writeObject(ackRes);
+                        out.flush();     
+                        byteOrder = 0;
                     }
                     break;
                 }
