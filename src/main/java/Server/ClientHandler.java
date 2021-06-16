@@ -105,20 +105,6 @@ public class ClientHandler extends Thread implements Serializable{
         this.server = server;
         this.uid = UUID.randomUUID().toString();
     }
-    public String formatAnchor (String filename, Date timestamp, String username, boolean isYou){
-        StringBuilder sb = new StringBuilder();
-        String file = timestamp.getTime() + "_" + filename;
-        String s;
-        if (!isYou){
-            s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
-        }else {
-            s = "<p><><span style=\"color:green\">" + username + ":" + "</span>";                        
-        }
-        sb.append(s);
-        sb.append("<a href='").append(file).append("'>").append(filename).append("</a>");
-        sb.append("</p>");
-        return sb.toString();        
-    }
     @Override
     public void run() {
         try{
@@ -145,18 +131,32 @@ public class ClientHandler extends Thread implements Serializable{
         out.writeObject(ackRes);
         out.flush();        
     }
-    
     public String formatMessage(String username, String message, boolean isYou){       
         StringBuilder sb = new StringBuilder();
         String s;
         if (!isYou){
             s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
         }else {
-            s = "<p><span style=\"color:green\">" + username + ":" + "</span>";                        
+            s = "<p style=\"text-align:right\"><span style=\"color:green\">" + username + ":" + "</span>";                        
         }
         sb.append(s);
         sb.append(message.replaceAll("\n", "<br>")).append("</p>");
         return sb.toString();
+    }
+    
+    public String formatAnchor (String filename, Date timestamp, String username, boolean isYou){
+        StringBuilder sb = new StringBuilder();
+        String file = timestamp.getTime() + "_" + filename;
+        String s;
+        if (!isYou){
+            s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
+        }else {
+            s = "<p style=\"text-align:right;\"><><span style=\"color:green\">" + username + ":" + "</span>";                        
+        }
+        sb.append(s);
+        sb.append("<a href='").append(file).append("'>").append(filename).append("</a>");
+        sb.append("</p>");
+        return sb.toString();        
     }
     
     public void handleRequest(Object reqObject) throws IOException{

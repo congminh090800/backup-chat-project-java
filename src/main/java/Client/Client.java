@@ -230,7 +230,7 @@ public class Client implements Serializable{
         if (!isYou){
             s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
         }else {
-            s = "<p><span style=\"color:green\">" + username + ":" + "</span>";                        
+            s = "<p style=\"text-align:right\"><span style=\"color:green\">" + username + ":" + "</span>";                        
         }
         sb.append(s);
         sb.append(message.replaceAll("\n", "<br>")).append("</p>");
@@ -244,7 +244,7 @@ public class Client implements Serializable{
         if (!isYou){
             s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
         }else {
-            s = "<p><><span style=\"color:green\">" + username + ":" + "</span>";                        
+            s = "<p style=\"text-align:right\"><><span style=\"color:green\">" + username + ":" + "</span>";                        
         }
         sb.append(s);
         sb.append("<a href='").append(file).append("'>").append(filename).append("</a>");
