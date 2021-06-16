@@ -169,9 +169,17 @@ public class Client implements Serializable{
         BaseRequest req = new SaveChatRequest(sender, message, Command.SAVE_CHAT);      
         sendRequest(req);       
     }
+    public void saveLink(String filename, Date timestamp, String sender){
+        BaseRequest req = new SaveChatRequest(sender,filename,true,timestamp,Command.SAVE_CHAT);
+        sendRequest(req);
+    }
     public void loadChat(String target){
         BaseRequest req = new LoadChatRequest(target, Command.LOAD_CHAT);      
         sendRequest(req);       
+    }
+    public void sendLink(String filename, Date timestamp, String receiver){
+        BaseRequest req = new PrivateChatRequest(filename ,receiver ,true ,timestamp ,Command.PRIVATE_CHAT);
+        sendRequest(req);
     }
     public void uploadFile(File selectedFile){
         uploadHandler = new UploadHandler(selectedFile);
@@ -200,7 +208,7 @@ public class Client implements Serializable{
     public String formatMessage(String username, String message, boolean isYou){       
         StringBuilder sb = new StringBuilder();
         String s;
-        if (isYou){
+        if (!isYou){
             s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
         }else {
             s = "<p><span style=\"color:green\">" + username + ":" + "</span>";                        
@@ -208,6 +216,20 @@ public class Client implements Serializable{
         sb.append(s);
         sb.append(message.replaceAll("\n", "<br>")).append("</p>");
         return sb.toString();
+    }
+    public String formatAnchor (String filename, Date timestamp, String username, boolean isYou){
+        StringBuilder sb = new StringBuilder();
+        String file = timestamp.getTime() + "_" + filename;
+        String s;
+        if (!isYou){
+            s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
+        }else {
+            s = "<p><span style=\"color:green\">" + username + ":" + "</span>";                        
+        }
+        sb.append(s);
+        sb.append("<a href='").append(file).append("'>").append(filename).append("</a>");
+        sb.append("</p>");
+        return sb.toString();        
     }
     public void appendToChat(String formattedString){
         try {

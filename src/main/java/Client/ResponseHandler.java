@@ -11,22 +11,19 @@ import Responses.LoadChatResponse;
 import Responses.OnlineUsersResponse;
 import Responses.PrivateChatResponse;
 import Server.ClientHandler;
-import java.awt.Rectangle;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollBar;
 import javax.swing.SwingUtilities;
 import static javax.swing.SwingUtilities.invokeAndWait;
-import javax.swing.text.DefaultCaret;
-import org.w3c.dom.css.Rect;
 
 /**
  *
@@ -64,9 +61,17 @@ public class ResponseHandler extends Thread implements Serializable{
                     PrivateChatResponse res = (PrivateChatResponse) resObject;
                     if (StatusCode.OK.equals(res.getStatus())){
                         if (client.getChatApp().getOnlineList().getSelectedValue()!=null && client.getChatApp().getOnlineList().getSelectedValue().equals(res.getSender())){
-                            client.appendToChat(client.formatMessage(res.getSender(), res.getMessage(), true));
+                            if (res.isIsAnchor()){
+                                client.appendToChat(client.formatAnchor(res.getMessage(), res.getTimestamp(), res.getSender(), false));                                
+                            }else{
+                                client.appendToChat(client.formatMessage(res.getSender(), res.getMessage(), false));
+                            }
                         }
-                        client.saveChat(res.getSender(), res.getMessage());
+                        if (res.isIsAnchor()){
+                            client.saveLink(res.getMessage(), res.getTimestamp(), res.getSender());
+                        }else{
+                            client.saveChat(res.getSender(), res.getMessage());
+                        }
                     }else if(StatusCode.NOT_FOUND.equals(res.getStatus())){
                         client.showOptionPane(StatusCode.NOT_FOUND +": "+ "Please select a user to chat", "FAILURE", JOptionPane.DEFAULT_OPTION);
                     }
@@ -93,7 +98,7 @@ public class ResponseHandler extends Thread implements Serializable{
                         switch(res.getSystemCode()){
                             case MESSAGE_SENT -> {
                                 if (client.getChatApp().getOnlineList().getSelectedValue()!=null && client.getChatApp().getOnlineList().getSelectedValue().equals(res.getUid())){   
-                                    client.appendToChat(client.formatMessage(client.getUsername(), res.getMessage(), false));
+                                    client.appendToChat(client.formatMessage(client.getUsername(), res.getMessage(), true));
                                 }
                                 break;
                             }
@@ -136,17 +141,19 @@ public class ResponseHandler extends Thread implements Serializable{
                                 break;
                             }
                             case UPLOAD_SUCCESSFUL -> {
-                                DefaultListModel listModel = (DefaultListModel) client.getChatApp().getFileList().getModel();
-                                String filename = client.getUploadHandler().getTimestamp()+"_"+ client.getUploadHandler().getSelectedFile().getName();
+                                Date timestamp = client.getUploadHandler().getTimestamp();
+                                String filename = client.getUploadHandler().getSelectedFile().getName();
                                 try {
                                     invokeAndWait(() -> {
                                         client.getChatApp().getUploadProgress().setValue(0);
                                         client.getChatApp().getUploadBtn().setEnabled(true);
-                                        listModel.addElement(filename);
                                     });
                                 } catch (InterruptedException | InvocationTargetException ex) {
                                     Logger.getLogger(ResponseHandler.class.getName()).log(Level.SEVERE, null, ex);
                                 }
+                                client.appendToChat(client.formatAnchor(filename, timestamp, client.getUsername(), true));
+                                String receiver = client.getChatApp().getOnlineList().getSelectedValue();
+                                client.sendLink(filename,timestamp,receiver);
                                 client.getUploadHandler().getUploadSocket().close();
                                 break;
                             }

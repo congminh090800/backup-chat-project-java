@@ -6,6 +6,7 @@
 package Requests;
 
 import Constants.Command;
+import java.util.Date;
 
 /**
  *
@@ -14,9 +15,34 @@ import Constants.Command;
 public class SaveChatRequest extends BaseRequest {
     private String sender;
     private String message;
+    private boolean isAnchor;
+    private Date timestamp;
 
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
+    
+    public boolean isIsAnchor() {
+        return isAnchor;
+    }
+
+    public void setIsAnchor(boolean isAnchor) {
+        this.isAnchor = isAnchor;
+    }
     public String getSender() {
         return sender;
+    }
+
+    public SaveChatRequest(String sender, String message, boolean isAnchor, Date timestamp, Command command) {
+        super(command);
+        this.sender = sender;
+        this.message = message;
+        this.isAnchor = isAnchor;
+        this.timestamp = timestamp;
     }
 
     public void setSender(String sender) {

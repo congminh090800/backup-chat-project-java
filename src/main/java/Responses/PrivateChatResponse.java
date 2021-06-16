@@ -6,6 +6,7 @@
 package Responses;
 
 import Constants.StatusCode;
+import java.util.Date;
 
 /**
  *
@@ -14,7 +15,24 @@ import Constants.StatusCode;
 public class PrivateChatResponse extends BaseResponse {
     private String message;
     private String sender;
+    private boolean isAnchor;
+    private Date timestamp;
 
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
+    
+    public boolean isIsAnchor() {
+        return isAnchor;
+    }
+
+    public void setIsAnchor(boolean isAnchor) {
+        this.isAnchor = isAnchor;
+    }
     public String getMessage() {
         return message;
     }
@@ -35,6 +53,14 @@ public class PrivateChatResponse extends BaseResponse {
         super(status);
         this.message = message;
         this.sender = sender;
+    }
+
+    public PrivateChatResponse(String message, String sender, boolean isAnchor, Date timestamp, StatusCode status) {
+        super(status);
+        this.message = message;
+        this.sender = sender;
+        this.isAnchor = isAnchor;
+        this.timestamp = timestamp;
     }
 
     public PrivateChatResponse(StatusCode status) {

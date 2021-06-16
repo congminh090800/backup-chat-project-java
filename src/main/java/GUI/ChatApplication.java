@@ -20,11 +20,14 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 
 /**
  *
@@ -46,6 +49,7 @@ public class ChatApplication extends javax.swing.JFrame {
         initComponents();
         bindEnterForMessage();
         bindClickForOnline();
+        bindClickForAnchor();
     }
 
     private void submitText() {
@@ -290,6 +294,10 @@ public class ChatApplication extends javax.swing.JFrame {
 
     private void uploadBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_uploadBtnActionPerformed
         // TODO add your handling code here:
+        if (onlineList.getSelectedIndex()==-1){
+            JOptionPane.showConfirmDialog(null, "Please select a user to send file", "Fail", JOptionPane.DEFAULT_OPTION);
+            return;
+        }
         JFileChooser fc = new JFileChooser();
         int option = fc.showOpenDialog(this);
         if (option == JFileChooser.APPROVE_OPTION){
@@ -369,6 +377,14 @@ public class ChatApplication extends javax.swing.JFrame {
         onlineList.addListSelectionListener((e) -> {
             String target = onlineList.getSelectedValue();
             client.loadChat(target);
+        });
+    }
+
+    private void bindClickForAnchor() {
+        chatHistoryArea.addHyperlinkListener((HyperlinkEvent e) -> {
+            if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+                System.out.println(e.getDescription());
+            }
         });
     }
 }

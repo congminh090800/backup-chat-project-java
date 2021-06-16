@@ -27,6 +27,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.Socket;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -99,6 +100,20 @@ public class ClientHandler extends Thread implements Serializable{
         this.server = server;
         this.uid = UUID.randomUUID().toString();
     }
+    public String formatAnchor (String filename, Date timestamp, String username, boolean isYou){
+        StringBuilder sb = new StringBuilder();
+        String file = timestamp.getTime() + "_" + filename;
+        String s;
+        if (!isYou){
+            s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
+        }else {
+            s = "<p><span style=\"color:green\">" + username + ":" + "</span>";                        
+        }
+        sb.append(s);
+        sb.append("<a href='").append(file).append("'>").append(filename).append("</a>");
+        sb.append("</p>");
+        return sb.toString();        
+    }
     @Override
     public void run() {
         try{
@@ -168,32 +183,44 @@ public class ClientHandler extends Thread implements Serializable{
                     break;
                 }
                 case PRIVATE_CHAT -> {
-                    String receiverName = ((PrivateChatRequest) req).getReceiver();
+                    PrivateChatRequest chatReq = (PrivateChatRequest) req;
+                    String receiverName = chatReq.getReceiver();
                     ClientHandler receiverHandler = server.getClients().get(receiverName);
-                    String message = ((PrivateChatRequest) req).getMessage();
+                    String message = chatReq.getMessage();
                     
                     //save to history chat
                     String oldHistory = chatHistory.get(receiverName);
                     String newHistory;
                     if (oldHistory == null){
-                       newHistory = formatMessage(username, message, true);
+                        if (((PrivateChatRequest) req).isIsAnchor()){
+                            newHistory = formatAnchor(chatReq.getMessage(),chatReq.getTimestamp(),username,true);
+                        }else{
+                            newHistory = formatMessage(username, message, true);
+                        }
                     }else{
-                       newHistory = oldHistory + formatMessage(username, message, true);
+                        if (((PrivateChatRequest) req).isIsAnchor()){
+                            newHistory = oldHistory + formatAnchor(chatReq.getMessage(),chatReq.getTimestamp(),username,true);
+                        }else{
+                            newHistory = oldHistory + formatMessage(username, message, true);
+                        }
                     }
                     chatHistory.put(receiverName, newHistory);
                     
                     if (receiverHandler != null){
                         String receiver = ((PrivateChatRequest) req).getReceiver();
                         //send message
-                        BaseResponse res = new PrivateChatResponse(message,username,StatusCode.OK);
+                        BaseResponse res;
+                        res = new PrivateChatResponse(message,username,chatReq.isIsAnchor(),chatReq.getTimestamp(),StatusCode.OK);
                         ObjectOutputStream out = new ObjectOutputStream(receiverHandler.getClientSocket().getOutputStream());
                         out.writeObject(res);
                         out.flush();
                         //return ack to sender
-                        BaseResponse ackRes = new AckResponse(receiver, message, SystemCode.MESSAGE_SENT, StatusCode.OK);
-                        out = new ObjectOutputStream(clientSocket.getOutputStream());
-                        out.writeObject(ackRes);
-                        out.flush();
+                        if (!chatReq.isIsAnchor()){
+                            BaseResponse ackRes = new AckResponse(receiver, message, SystemCode.MESSAGE_SENT, StatusCode.OK);
+                            out = new ObjectOutputStream(clientSocket.getOutputStream());
+                            out.writeObject(ackRes);
+                            out.flush();                            
+                        }
                         break;
                     }else{
                         BaseResponse res = new PrivateChatResponse(StatusCode.NOT_FOUND);
@@ -250,14 +277,23 @@ public class ClientHandler extends Thread implements Serializable{
                     break;
                 }
                 case SAVE_CHAT -> {
-                    String senderName = ((SaveChatRequest)req).getSender();
-                    String message = ((SaveChatRequest)req).getMessage();
+                    SaveChatRequest saveReq = (SaveChatRequest)req;
+                    String senderName = saveReq.getSender();
+                    String message = saveReq.getMessage();
                     String newHistory;
                     String oldHistory = chatHistory.get(senderName);
                     if (oldHistory == null){
-                        newHistory = formatMessage(senderName, message, false);
+                        if (saveReq.isIsAnchor()){
+                            newHistory = formatAnchor(message,saveReq.getTimestamp(),senderName,false);                            
+                        }else{
+                            newHistory = formatMessage(senderName, message, false);
+                        }
                     }else {
-                        newHistory = oldHistory + formatMessage(senderName, message, false);
+                        if (saveReq.isIsAnchor()){
+                            newHistory = oldHistory + formatAnchor(message,saveReq.getTimestamp(),senderName,false);                            
+                        }else{
+                            newHistory = oldHistory + formatMessage(senderName, message, false);
+                        }
                     }
                     chatHistory.put(senderName, newHistory);
                     break;
