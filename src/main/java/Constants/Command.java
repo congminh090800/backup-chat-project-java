@@ -19,4 +19,5 @@ public enum Command {
     SAVE_CHAT,
     LOAD_CHAT,
     UPLOAD_FILE,
+    DOWNLOAD_FILE,
 }

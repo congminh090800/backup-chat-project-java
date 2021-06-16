@@ -8,7 +8,9 @@ package Server;
 import Constants.Command;
 import Constants.StatusCode;
 import Constants.SystemCode;
+import Constants.env;
 import Requests.BaseRequest;
+import Requests.DownloadRequest;
 import Requests.LoadChatRequest;
 import Requests.PrivateChatRequest;
 import Requests.RegisterRequest;
@@ -17,10 +19,13 @@ import Requests.UploadRequest;
 import Requests.ValidateRequest;
 import Responses.AckResponse;
 import Responses.BaseResponse;
+import Responses.DownloadResponse;
 import Responses.LoadChatResponse;
 import Responses.OnlineUsersResponse;
 import Responses.PrivateChatResponse;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -107,7 +112,7 @@ public class ClientHandler extends Thread implements Serializable{
         if (!isYou){
             s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
         }else {
-            s = "<p><span style=\"color:green\">" + username + ":" + "</span>";                        
+            s = "<p><><span style=\"color:green\">" + username + ":" + "</span>";                        
         }
         sb.append(s);
         sb.append("<a href='").append(file).append("'>").append(filename).append("</a>");
@@ -350,6 +355,38 @@ public class ClientHandler extends Thread implements Serializable{
                         out.writeObject(ackRes);
                         out.flush();     
                         byteOrder = 0;
+                    }
+                    break;
+                }
+                case DOWNLOAD_FILE -> {
+                    DownloadRequest downloadReq = (DownloadRequest) req;
+                    File file = new File(downloadReq.getFilename());
+                    byte data[] = new byte[env.SNIPPET_SIZE];
+                    if (file.exists()){
+                        new Thread(() -> {
+                            try {
+                                FileInputStream input = new FileInputStream(file);
+                                while (input.read(data)>0){
+                                    BaseResponse downloadRes = new DownloadResponse(file.getName(), false, data, StatusCode.OK);
+                                    ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+                                    out.writeObject(downloadRes);
+                                    out.flush();                                           
+                                }
+                                BaseResponse downloadRes = new DownloadResponse(file.getName(), true, null, StatusCode.OK);
+                                ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+                                out.writeObject(downloadRes);
+                                out.flush();  
+                            } catch (FileNotFoundException ex) {
+                                Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                            } catch (IOException ex) {
+                                Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }).start();
+                    }else{
+                        BaseResponse ackRes = new AckResponse(uid, "File not exists", SystemCode.DOWNLOAD_FAIL, StatusCode.NOT_FOUND);
+                        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+                        out.writeObject(ackRes);
+                        out.flush();                          
                     }
                     break;
                 }

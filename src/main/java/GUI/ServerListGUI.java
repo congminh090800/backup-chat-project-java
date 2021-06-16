@@ -31,6 +31,7 @@ public class ServerListGUI extends javax.swing.JFrame {
     public ServerListGUI() {
         initComponents();
         readConfig();
+        checkServers();
     }
     
     public void addServer(String host){

@@ -9,6 +9,7 @@ import Constants.Command;
 import Constants.env;
 import GUI.ChatApplication;
 import Requests.BaseRequest;
+import Requests.DownloadRequest;
 import Requests.LoadChatRequest;
 import Requests.NoParamRequest;
 import Requests.PrivateChatRequest;
@@ -53,8 +54,7 @@ public class Client implements Serializable{
     private String uid;
     private String username;
     private ChatApplication chatApp;
-    private UploadHandler uploadHandler;
-
+    private UploadHandler uploadHandler;   
     public UploadHandler getUploadHandler() {
         return uploadHandler;
     }
@@ -185,6 +185,25 @@ public class Client implements Serializable{
         uploadHandler = new UploadHandler(selectedFile);
         uploadHandler.start();
     }
+    public void downloadFile(String filename){ 
+        String name = filename;
+        int splitter = name.indexOf('_');
+        if (splitter>0){
+            name = name.substring(splitter+1);
+        } 
+        File file = new File(name);       
+        if (file.exists()){
+            int option = JOptionPane.showConfirmDialog(null,"This file is already existed, Do you want to override it?", "Warning", JOptionPane.YES_NO_OPTION );
+            if (option == JOptionPane.YES_OPTION){
+                file.delete();
+                BaseRequest req = new DownloadRequest(filename, Command.DOWNLOAD_FILE);
+                sendRequest(req);            
+            }        
+        }else{
+            BaseRequest req = new DownloadRequest(filename, Command.DOWNLOAD_FILE);
+            sendRequest(req);           
+        }
+    }
     public void connect(String ip, int port, String username) throws IOException{
         this.clientSocket = new Socket(ip, port);
         onlineUsers = new ArrayList<>();
@@ -217,6 +236,7 @@ public class Client implements Serializable{
         sb.append(message.replaceAll("\n", "<br>")).append("</p>");
         return sb.toString();
     }
+    
     public String formatAnchor (String filename, Date timestamp, String username, boolean isYou){
         StringBuilder sb = new StringBuilder();
         String file = timestamp.getTime() + "_" + filename;
@@ -224,7 +244,7 @@ public class Client implements Serializable{
         if (!isYou){
             s = "<p><span style=\"color:red\">" + username + ":" + "</span>";            
         }else {
-            s = "<p><span style=\"color:green\">" + username + ":" + "</span>";                        
+            s = "<p><><span style=\"color:green\">" + username + ":" + "</span>";                        
         }
         sb.append(s);
         sb.append("<a href='").append(file).append("'>").append(filename).append("</a>");
@@ -305,7 +325,17 @@ public class Client implements Serializable{
                 out.writeObject(req);        
                 out.flush();
             } catch (IOException ex) {
-                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+                try {
+                    SwingUtilities.invokeAndWait(() -> {
+                        chatApp.getUploadProgress().setValue(0);
+                        chatApp.getUploadBtn().setEnabled(true);
+                    });
+                    JOptionPane.showConfirmDialog(null, "Failed to upload! please try again","FAILURE", JOptionPane.DEFAULT_OPTION);
+                    running = false;
+                    uploadSocket.close();
+                } catch (InterruptedException | InvocationTargetException | IOException ex1) {
+                    Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex1);
+                }
             }
         }
         

@@ -7,10 +7,13 @@ package Client;
 
 import Constants.StatusCode;
 import Responses.AckResponse;
+import Responses.DownloadResponse;
 import Responses.LoadChatResponse;
 import Responses.OnlineUsersResponse;
 import Responses.PrivateChatResponse;
 import Server.ClientHandler;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -92,6 +95,25 @@ public class ResponseHandler extends Thread implements Serializable{
                         client.showOptionPane(StatusCode.NOT_FOUND +": "+ res.getError(), "FAILURE", JOptionPane.DEFAULT_OPTION);
                     }                    
                 }
+                if (resObject instanceof DownloadResponse){
+                    DownloadResponse res = (DownloadResponse) resObject;
+                    if (res.isIsDone()){
+                        client.showOptionPane("Download successfully", "Download file", JOptionPane.DEFAULT_OPTION);
+                    }else{
+                        String filename = res.getFilename();
+                        int splitter = filename.indexOf('_');
+                        if (splitter>0){
+                            filename = filename.substring(splitter+1);
+                        }
+                        File file = new File(filename);
+                        if (!file.exists()){
+                            file.createNewFile();
+                        }
+                        try (FileOutputStream output = new FileOutputStream(file, true)) {
+                            output.write(res.getData());
+                        }                     
+                    }
+                }
                 if (resObject instanceof AckResponse) {
                     AckResponse res = (AckResponse) resObject;
                     if (StatusCode.OK.equals(res.getStatus())){
@@ -169,6 +191,10 @@ public class ResponseHandler extends Thread implements Serializable{
                                     Logger.getLogger(ResponseHandler.class.getName()).log(Level.SEVERE, null, ex);
                                 }
                                 client.getUploadHandler().getUploadSocket().close();
+                                break;
+                            }
+                            case DOWNLOAD_FAIL -> {
+                                client.showOptionPane(res.getStatus()+":"+res.getMessage(), "Download file", JOptionPane.DEFAULT_OPTION);
                                 break;
                             }
                             default -> {
